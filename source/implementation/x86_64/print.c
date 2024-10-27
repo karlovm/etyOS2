@@ -78,21 +78,21 @@ void print_clear() {
 }
 
 void print_newline() {
-    col = 0;
+    col = 0;  // Reset column to the beginning
 
     if (row < NUM_ROWS - 1) {
+        // Move to the next row if not at the last row
         row++;
-        return;
-    }
-
-    for (size_t row = 1; row < NUM_ROWS; row++) {
-        for (size_t col = 0; col < NUM_COLS; col++) {
-            struct Char character = buffer[col + NUM_COLS * row];
-            buffer[col + NUM_COLS * (row - 1)] = character;
+    } else {
+        // Scroll screen by shifting all rows up by one
+        for (size_t r = 1; r < NUM_ROWS; r++) {
+            for (size_t c = 0; c < NUM_COLS; c++) {
+                buffer[(r - 1) * NUM_COLS + c] = buffer[r * NUM_COLS + c];
+            }
         }
+        // Clear the last row after scrolling
+        clear_row(NUM_ROWS - 1);
     }
-
-    clear_row(NUM_COLS - 1);
 }
 
 void print_char(char character) {
