@@ -21,6 +21,7 @@ typedef struct __attribute__((packed)) {
 } PartitionEntry;
 
 
+
 // Function declarations
 void create_partition(uint32_t start_lba, uint32_t sector_count);
 void select_partition(int partition_number);
