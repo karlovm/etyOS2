@@ -3,7 +3,7 @@ extern longmode_start
 
 section .data
 ; Error messages
-ERR_PREFIX:    db 'ERR: ', 0
+ERR_PREFIX:    db 'etyOS2 Kernel Load Error: ', 0
 MULTIBOOT_ERR: db 'Multiboot check failed', 0
 CPUID_ERR:     db 'CPUID not supported', 0
 LONGMODE_ERR:  db 'Long mode not supported', 0
@@ -30,7 +30,7 @@ check_multiboot:
     jne .no_multiboot
     ret
 .no_multiboot:
-    mov al, "M"
+    mov al, 'M'          ; Store 'M' for Multiboot error
     jmp error
 
 check_cpuid:
@@ -48,7 +48,7 @@ check_cpuid:
     je .no_cpuid
     ret
 .no_cpuid:
-    mov al, "C"
+    mov al, 'C'          ; Store 'C' for CPUID error
     jmp error
 
 check_longmode:
@@ -64,7 +64,7 @@ check_longmode:
     
     ret
 .no_longmode:
-    mov al, "L"
+    mov al, 'L'          ; Store 'L' for Long Mode error
     jmp error
 
 setup_page_tables:
@@ -112,72 +112,63 @@ enable_paging:
 
     ret
 
-; Enhanced error handler with color display
+error:
+    push eax             ; Save error code
+    call display_error
+    jmp $               ; Infinite loop
+
 display_error:
     ; Video memory address for text mode
     mov edi, 0xb8000
     
     ; Clear screen first (fill with spaces)
-    mov ecx, 80*25        ; screen size (80x25)
-    mov ax, 0x4020       ; red background (0x40), space character (0x20)
-    rep stosw            ; repeat store word
+    push eax            ; Save error code during screen clear
+    mov ecx, 80*25      ; screen size (80x25)
+    mov ax, 0x4020      ; red background (0x40), space character (0x20)
+    rep stosw           ; repeat store word
+    pop eax             ; Restore error code
     
     ; Reset to start of video memory
     mov edi, 0xb8000
     
-    ; Print "ERR: " prefix
-    mov ah, 0x4F        ; White text (0x0F) on red background (0x40)
+    ; Print "etyOS2 Kernel Load Error: " prefix
     mov esi, ERR_PREFIX
     call print_string
     
-    ; Print the error character
-    mov ah, 0x4F        ; White on red
-    stosw               ; Store character and attribute
-    
-    ; Print detailed error message based on error code
-    add edi, 2          ; Skip a character
+    ; Get the error code and determine which message to display
+    mov esi, MULTIBOOT_ERR    ; Default to multiboot error
     cmp al, 'M'
-    je .multiboot_msg
+    je .print_error_msg
     cmp al, 'C'
-    je .cpuid_msg
-    cmp al, 'L'
-    je .longmode_msg
-    jmp .end
-
-.multiboot_msg:
-    mov esi, MULTIBOOT_ERR
-    jmp .print_msg
-
-.cpuid_msg:
+    jne .not_cpuid
     mov esi, CPUID_ERR
-    jmp .print_msg
-
-.longmode_msg:
+    jmp .print_error_msg
+.not_cpuid:
+    cmp al, 'L'
+    jne .print_error_msg
     mov esi, LONGMODE_ERR
-    
-.print_msg:
+
+.print_error_msg:
     call print_string
-
-.end:
-    hlt
-
-; Helper function to print null-terminated string
-; Input: esi = string address, ah = attribute
-print_string:
-    push edi
-.loop:
-    lodsb               ; Load character from [esi] into al
-    test al, al        ; Check for null terminator
-    jz .done
-    stosw               ; Store character and attribute
-    jmp .loop
-.done:
-    pop edi
     ret
 
-error:
-    call display_error
-    hlt
+; Helper function to print null-terminated string
+; Input: esi = string address
+print_string:
+    push eax                  ; Save registers we'll modify
+    push ecx
+    mov ah, 0x4F             ; White text on red background
+.loop:
+    lodsb                    ; Load next character
+    test al, al              ; Check for null terminator
+    jz .done
+    mov word [edi], ax       ; Store character and attribute
+    add edi, 2               ; Move to next character position
+    jmp .loop
+.done:
+    pop ecx                  ; Restore registers
+    pop eax
+    ret
 
 section .bss
 align 4096

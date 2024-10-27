@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "print.h": "c"
+        "print.h": "c",
+        "stdint.h": "c",
+        "console.h": "c",
+        "format": "c"
     }
 }

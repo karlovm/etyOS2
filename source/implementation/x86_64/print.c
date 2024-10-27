@@ -1,5 +1,6 @@
 #include "print.h"
 #include "console.h"
+#include "string.h"
 #include <stdint.h>
 
 static inline uint8_t inb(uint16_t port) {
@@ -9,9 +10,6 @@ static inline uint8_t inb(uint16_t port) {
 }
 
 
-#include "print.h"
-#include "console.h"
-#include <stdint.h>
 
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
@@ -223,15 +221,6 @@ void read_input(char* buffer, size_t buffer_size) {
     buffer[i] = '\0';  // Final null-terminate the input string
 }
 
-
-// String comparison utilities (simplified)
-int strcmp(const char* str1, const char* str2) {
-    while (*str1 && (*str1 == *str2)) {
-        str1++;
-        str2++;
-    }
-    return *(unsigned char*)str1 - *(unsigned char*)str2;
-}
 
 int strncmp(const char* str1, const char* str2, size_t num) {
     for (size_t i = 0; i < num; i++) {
