@@ -3,6 +3,8 @@
         "print.h": "c",
         "stdint.h": "c",
         "console.h": "c",
-        "format": "c"
-    }
+        "format": "c",
+        "filesystem.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

@@ -8,14 +8,18 @@
 #define PARTITION_ENTRY_SIZE 16
 #define FAT32_PARTITION_TYPE 0x0C
 
-typedef struct {
-    uint8_t status;         // 0x00 = Inactive, 0x80 = Active (bootable)
-    uint8_t chs_first[3];   // CHS address of the first absolute sector in partition
-    uint8_t type;           // Partition type
-    uint8_t chs_last[3];    // CHS address of the last absolute sector in partition
-    uint32_t lba_first;     // LBA of the first absolute sector in partition
-    uint32_t sector_count;  // Number of sectors in partition
+// Partition table entry structure
+typedef struct __attribute__((packed)) {
+    uint8_t  status;           // 0x80 = bootable, 0x00 = not bootable
+    uint8_t  start_head;       // Starting head
+    uint16_t start_sector;     // Starting sector
+    uint8_t  type;            // Partition type
+    uint8_t  end_head;        // Ending head
+    uint16_t end_sector;      // Ending sector
+    uint32_t lba_first;       // First LBA sector
+    uint32_t sector_count;    // Number of sectors
 } PartitionEntry;
+
 
 // Function declarations
 void create_partition(uint32_t start_lba, uint32_t sector_count);
