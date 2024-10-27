@@ -9,43 +9,94 @@ static inline uint8_t inb(uint16_t port) {
 }
 
 
+#include "print.h"
+#include "console.h"
+#include <stdint.h>
+
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
 #define KEYBOARD_BUFFER_FULL 0x01
+#define LEFT_SHIFT_PRESSED  0x2A
+#define RIGHT_SHIFT_PRESSED 0x36
+#define LEFT_SHIFT_RELEASED 0xAA
+#define RIGHT_SHIFT_RELEASED 0xB6
+#define CAPS_LOCK_PRESSED 0x3A
 
-// Map basic scan codes to ASCII characters for letters and numbers
+static int caps_lock_enabled = 0;
+
+// Map basic scan codes to ASCII characters for lowercase letters and numbers
 static const char key_map[128] = {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b', // Backspace
     '\t', // Tab
-    'q', 'w', 'e', 'r', // ...
-    't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n', // Enter
+    'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n', // Enter
     0,    // Control
     'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`',
     0,    // Left Shift
-    '\\', 'z', 'x', 'c', 'v', 'b', 'n', // ...
-    'm', ',', '.', '/', 0, // Right Shift
+    '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, // Right Shift
     '*',
     0,    // Alt
     ' ',  // Space
     // Other keys omitted for brevity
 };
 
+// Map for uppercase letters and shifted characters
+static const char shifted_key_map[128] = {
+    0,  27, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b', // Backspace
+    '\t', // Tab
+    'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n', // Enter
+    0,    // Control
+    'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~',
+    0,    // Left Shift
+    '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0, // Right Shift
+    '*',
+    0,    // Alt
+    ' ',  // Space
+    // Other keys omitted for brevity
+};
+
+// Track whether Shift is currently pressed
+static int shift_pressed = 0;
+
 // Wait until a key is pressed and return the corresponding character
 char get_char() {
     uint8_t scan_code = 0;
 
-    // Wait for a key press
     while (1) {
         if (inb(KEYBOARD_STATUS_PORT) & KEYBOARD_BUFFER_FULL) {
             scan_code = inb(KEYBOARD_DATA_PORT);
-            
-            // If the scan code is within our mapped keys range, return the mapped character
+
+            // Handle Shift key
+            if (scan_code == LEFT_SHIFT_PRESSED || scan_code == RIGHT_SHIFT_PRESSED) {
+                shift_pressed = 1;
+                continue;
+            } else if (scan_code == LEFT_SHIFT_RELEASED || scan_code == RIGHT_SHIFT_RELEASED) {
+                shift_pressed = 0;
+                continue;
+            }
+
+            // Handle Caps Lock key
+            if (scan_code == CAPS_LOCK_PRESSED) {
+                caps_lock_enabled = !caps_lock_enabled;
+                continue;
+            }
+
+            // Handle key press for normal and shifted/caps lock states
             if (scan_code < 128) {
-                return key_map[scan_code];
+                if (shift_pressed || caps_lock_enabled) {
+                    // Shift or Caps Lock is active
+                    if (scan_code >= 'a' && scan_code <= 'z' && caps_lock_enabled && !shift_pressed) {
+                        return shifted_key_map[scan_code];
+                    }
+                    return shifted_key_map[scan_code];
+                } else {
+                    return key_map[scan_code];
+                }
             }
         }
     }
 }
+
+
 
 const static size_t NUM_COLS = 80;
 const static size_t NUM_ROWS = 25;
@@ -72,6 +123,7 @@ void clear_row(size_t row) {
 }
 
 void print_clear() {
+    row = 0;
     for (size_t i = 0; i < NUM_ROWS; i++) {
         clear_row(i);
     }
