@@ -53,78 +53,11 @@ void kernel_main()
         // Process command
         if (strcmp(command, "help") == 0)
         {
-            print_str("Available commands:");
-            print_newline();
-            print_str(" - help: Show this help message");
-            print_newline();
-            print_str(" - clear: Clear the screen");
-            print_newline();
-            print_str(" - echo <text>: Print text back to the console");
-            print_newline();
-            print_str(" - about: Get information about this build");
-            print_newline();
-
-            // Disk management commands
-            print_str(" - listdisks: Show all available disks");
-            print_newline();
-            print_str(" - selectdisk <number>: Select a disk to work with");
-            print_newline();
-            print_str(" - newpart <size_mb>: Create a new partition with size in MB");
-            print_newline();
-            print_str(" - delpart <number>: Delete a partition");
-            print_newline();
-            print_str(" - partinfo: Show partition information and filesystem types");
-            print_newline();
-
-            print_set_color(PRINT_COLOR_YELLOW, color);
-            print_newline();
-            print_str("    Direct tools");
-            print_set_color(PRINT_COLOR_WHITE, color);
-            print_newline();
-            // Original partition commands
-            print_str(" - create_partition <start_lba> <sector_count>: Create a new FAT32 partition");
-            print_set_color(PRINT_COLOR_LIGHT_GRAY, color);
-            print_newline();
-            print_str("    Note: each sector is 512");
-            print_set_color(PRINT_COLOR_WHITE, color);
-            print_newline();
-            print_str(" - format_partition <partition_number>: Format the partition as FAT32");
-            print_newline();
-            print_str(" - partitions: Show all partitions");
-            print_newline();
-            print_str(" - setcolor <background>: Change the text and background colors");
-            print_newline();
+            show_help(color);
         }
-        else if (strcmp(command, "listdisks") == 0)
+        else if (strcmp(command, "disktool") == 0)
         {
-            list_disks();
-        }
-        else if (strncmp(command, "selectdisk ", 11) == 0)
-        {
-            int disk_num = strtoul(command + 11, NULL, 10);
-            if (select_disk(disk_num) == 0)
-            {
-                print_str("Disk selected successfully.");
-                print_newline();
-            }
-        }
-        else if (strncmp(command, "newpart ", 8) == 0)
-        {
-            uint32_t size_mb = strtoul(command + 8, NULL, 10);
-            if (create_partition_mb(size_mb) == 0)
-            {
-                print_str("Partition created successfully.");
-                print_newline();
-            }
-        }
-        else if (strncmp(command, "delpart ", 8) == 0)
-        {
-            int part_num = strtoul(command + 8, NULL, 10);
-            delete_partition(part_num);
-        }
-        else if (strcmp(command, "partinfo") == 0)
-        {
-            display_partition_info();
+            start_disktool(color);
         }
         else if (strcmp(command, "clear") == 0)
         {

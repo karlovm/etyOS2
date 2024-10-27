@@ -28,6 +28,8 @@ static int num_disks = 0;
 // Initialize the disk tool and scan for available disks
 void init_disktool() {
     num_disks = 0;
+    print_str("Analyzing disks...");
+    print_newline();
     uint16_t identify_buffer[256];
 
     for (int controller = 0; controller < 2; ++controller) {
@@ -65,6 +67,13 @@ void init_disktool() {
             num_disks++;
         }
     }
+    print_str("Found " );
+    print_dec(num_disks);
+
+    print_str(" disks");
+    print_newline();
+    print_newline();
+    
 }
 
 // List all available disks
