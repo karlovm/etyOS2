@@ -87,40 +87,9 @@ void kernel_main()
             print_str(command + 5); // Print the rest of the input after "echo "
             print_newline();
         }
-        else if (strncmp(command, "create_partition ", 17) == 0)
-        {
-            // Parse parameters for create_partition
-            uint32_t start_lba = strtoul(command + 17, NULL, 10);
-            uint32_t sector_count = strtoul(strchr(command + 17, ' ') + 1, NULL, 10);
-
-            create_partition(start_lba, sector_count);
-        }
         else if (strcmp(command, "partitions") == 0)
         {
             display_partitions();
-        }
-        else if (strncmp(command, "format_partition ", 17) == 0)
-        {
-            // Parse parameter for format_partition
-            int partition_number = strtoul(command + 17, NULL, 10);
-
-            uint8_t mbr[MBR_SIZE];
-            if (ata_read_sector(0, mbr) == 0)
-            {
-                PartitionEntry *partition_table = (PartitionEntry *)(mbr + PARTITION_TABLE_OFFSET);
-                if (partition_number >= 0 && partition_number < 4 && partition_table[partition_number].type != 0x00)
-                {
-                    format_fat32(partition_table[partition_number].lba_first, partition_table[partition_number].sector_count);
-                }
-                else
-                {
-                    print_str("Invalid partition number.");
-                }
-            }
-            else
-            {
-                print_str("Error: Unable to read MBR.");
-            }
         }
         else if (strncmp(command, "setcolor ", 9) == 0)
         {
