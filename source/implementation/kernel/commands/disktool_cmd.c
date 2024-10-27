@@ -46,9 +46,13 @@ void start_disktool(int color)
             print_newline();
             print_str(" - partinfo: Show partition information and filesystem types");
             print_newline();
-            print_str(" - formatpart <number> [fat32|ext4]: Format partition with specified filesystem");
+            print_str(" - format [fat32|ext4]: Format selected disk (defaults to ext4).");
             print_newline();
-            print_str(" - format [fat32|ext4]: Format selected disk (defaults to ext4)");
+            print_set_color(PRINT_COLOR_LIGHT_GRAY, color);
+            print_str("Warning: remove all partitions from disk before formatting it"); // Prompt
+            print_set_color(PRINT_COLOR_WHITE, color);
+            print_newline();
+            print_str(" - update: Update disks information");
             print_newline();
             print_str(" - exit: Exit from disktool");
             print_newline();
@@ -56,6 +60,10 @@ void start_disktool(int color)
         else if (strcmp(command, "listdisks") == 0)
         {
             list_disks();
+        }
+        else if (strcmp(command, "update") == 0)
+        {
+            init_disktool();
         }
         else if (strcmp(command, "format") == 0)
         {
@@ -100,22 +108,6 @@ void start_disktool(int color)
         {
             int part_num = strtoul(command + 8, NULL, 10);
             delete_partition(part_num);
-        }
-        else if (strncmp(command, "formatpart ", 11) == 0)
-        {
-            char *part_str = command + 11;
-            char *fs_str = strchr(part_str, ' ');
-            FileSystemType fs_type = FS_FAT32;
-
-            if (fs_str)
-            {
-                *fs_str = '\0'; // Null terminate partition number string
-                fs_str++;       // Move to filesystem type
-                fs_type = parse_fs_type(fs_str);
-            }
-
-            int part_num = strtoul(part_str, NULL, 10);
-            format_partition(part_num, fs_type);
         }
         else if (strcmp(command, "partinfo") == 0)
         {

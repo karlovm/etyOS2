@@ -122,11 +122,11 @@ int create_partition_mb(uint32_t size_mb, FileSystemType fs_type)
     // Use the appropriate create_partition function based on filesystem type
     if (fs_type == FS_FAT32)
     {
-        print_str("FAT32 PARTITIONS IS NOT RECOMMENDED");
+        print_str("FAT32 PARTITION IS NOT RECOMMENDED");
         print_newline();
         create_fat32_partition(available_disks[current_disk].controller,
-                              available_disks[current_disk].drive,
-                              2048, sector_count);
+                               available_disks[current_disk].drive,
+                               2048, sector_count);
     }
     else if (fs_type == FS_EXT4)
     {
@@ -134,7 +134,7 @@ int create_partition_mb(uint32_t size_mb, FileSystemType fs_type)
                               available_disks[current_disk].drive,
                               2048, sector_count);
     }
-
+    init_disktool();
     return 0;
 }
 
@@ -166,8 +166,8 @@ int format_disk(FileSystemType fs_type)
         print_str("FAT32 PARTITIONS IS NOT RECOMMENDED");
         print_newline();
         create_fat32_partition(available_disks[current_disk].controller,
-                              available_disks[current_disk].drive,
-                              2048, sector_count);
+                               available_disks[current_disk].drive,
+                               2048, sector_count);
     }
     else if (fs_type == FS_EXT4)
     {
@@ -175,7 +175,7 @@ int format_disk(FileSystemType fs_type)
                               available_disks[current_disk].drive,
                               2048, sector_count);
     }
-   
+
     return 0;
 }
 
@@ -242,7 +242,8 @@ int format_partition(int partition_index, FileSystemType fs_type)
                            partition_table[partition_index].lba_first,
                            partition_table[partition_index].sector_count);
     }
-
+    print_str("Unknown partition type");
+    print_newline();
     return -1;
 }
 

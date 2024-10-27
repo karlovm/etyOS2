@@ -16,13 +16,6 @@ void show_help(int color)
     print_newline();
     print_str(" - about: Get information about this build");
     print_newline();
-
-
-    print_set_color(PRINT_COLOR_YELLOW, color);
-    print_newline();
-    print_str("    Direct tools");
-    print_set_color(PRINT_COLOR_WHITE, color);
-    print_newline();
     print_str(" - partitions: Show all partitions");
     print_newline();
     print_str(" - setcolor <background>: Change the text and background colors");

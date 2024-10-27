@@ -106,7 +106,6 @@ static void init_superblock(Ext4Superblock* sb, uint32_t total_sectors) {
     copy_bytes(sb->s_volume_name, (const uint8_t*)volume_name, strlen(volume_name));
 }
 
-
 int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_sectors) {
     if (total_sectors < 8192) { // Minimum size check (32MB)
         return -1;
@@ -127,49 +126,62 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
     Ext4Superblock* sb = (Ext4Superblock*)(disk_buffer + (EXT4_SUPERBLOCK_OFFSET % SECTOR_SIZE));
     init_superblock(sb, total_sectors);
     
+    // Calculate number of block groups
+    uint32_t num_block_groups = (sb->s_blocks_count_lo + sb->s_blocks_per_group - 1) / 
+                               sb->s_blocks_per_group;
+    
     // Write the superblock sector back
     if (ata_write_sector_disk(controller, drive, sb_sector, disk_buffer) != 0) {
         return -1;
     }
     
-    // Clear buffer for block group descriptor
-    memset2(disk_buffer, 0, SECTOR_SIZE);
-    
-    // Initialize first block group descriptor
-    Ext4GroupDesc* gd = (Ext4GroupDesc*)disk_buffer;
-    uint32_t first_block = sb->s_first_data_block + 1;
-    
-    gd->bg_block_bitmap_lo = first_block;
-    gd->bg_inode_bitmap_lo = first_block + 1;
-    gd->bg_inode_table_lo = first_block + 2;
-    gd->bg_free_blocks_count_lo = sb->s_blocks_per_group - 4; // Subtract metadata blocks
-    gd->bg_free_inodes_count_lo = sb->s_inodes_per_group;
-    gd->bg_used_dirs_count_lo = 0;
-    gd->bg_flags = 0;
-    
-    // Write block group descriptor
-    if (ata_write_sector_disk(controller, drive, sb_sector + 1, disk_buffer) != 0) {
-        return -1;
-    }
-    
-    // Clear buffer for bitmap initialization
-    memset2(disk_buffer, 0, SECTOR_SIZE);
-    
-    // Initialize block bitmap - mark first few blocks as used
-    disk_buffer[0] = 0x0F; // First 4 blocks used (superblock, GDT, block bitmap, inode bitmap)
-    
-    // Write block bitmap
-    uint32_t bitmap_sector = start_lba + ((first_block * EXT4_DEFAULT_BLOCK_SIZE) / SECTOR_SIZE);
-    if (ata_write_sector_disk(controller, drive, bitmap_sector, disk_buffer) != 0) {
-        return -1;
-    }
-    
-    // Clear buffer again for inode bitmap
-    memset2(disk_buffer, 0, SECTOR_SIZE);
-    
-    // Write empty inode bitmap
-    if (ata_write_sector_disk(controller, drive, bitmap_sector + 1, disk_buffer) != 0) {
-        return -1;
+    // Process each block group
+    uint32_t first_block = sb->s_first_data_block;
+    for (uint32_t group = 0; group < num_block_groups; group++) {
+        // Clear buffer for block group descriptor
+        memset2(disk_buffer, 0, SECTOR_SIZE);
+        
+        // Initialize block group descriptor
+        Ext4GroupDesc* gd = (Ext4GroupDesc*)disk_buffer;
+        
+        // Calculate blocks for this group
+        uint32_t group_first_block = first_block + (group * sb->s_blocks_per_group);
+        uint32_t blocks_in_group = sb->s_blocks_per_group;
+        if (group == num_block_groups - 1) {
+            // Handle last group which might be partial
+            blocks_in_group = sb->s_blocks_count_lo - 
+                            (group * sb->s_blocks_per_group);
+        }
+        
+        // Set up group descriptor
+        gd->bg_block_bitmap_lo = group_first_block;
+        gd->bg_inode_bitmap_lo = group_first_block + 1;
+        gd->bg_inode_table_lo = group_first_block + 2;
+        gd->bg_free_blocks_count_lo = blocks_in_group - 4; // Subtract metadata blocks
+        gd->bg_free_inodes_count_lo = sb->s_inodes_per_group;
+        gd->bg_used_dirs_count_lo = 0;
+        gd->bg_flags = 0;
+        
+        // Write block group descriptor
+        uint32_t gdt_sector = sb_sector + 1 + group;
+        if (ata_write_sector_disk(controller, drive, gdt_sector, disk_buffer) != 0) {
+            return -1;
+        }
+        
+        // Initialize and write block bitmap
+        memset2(disk_buffer, 0, SECTOR_SIZE);
+        disk_buffer[0] = 0x0F; // First 4 blocks used
+        uint32_t bitmap_sector = start_lba + 
+                               ((group_first_block * EXT4_DEFAULT_BLOCK_SIZE) / SECTOR_SIZE);
+        if (ata_write_sector_disk(controller, drive, bitmap_sector, disk_buffer) != 0) {
+            return -1;
+        }
+        
+        // Write empty inode bitmap
+        memset2(disk_buffer, 0, SECTOR_SIZE);
+        if (ata_write_sector_disk(controller, drive, bitmap_sector + 1, disk_buffer) != 0) {
+            return -1;
+        }
     }
     
     return 0;
