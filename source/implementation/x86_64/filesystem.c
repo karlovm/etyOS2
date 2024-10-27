@@ -1,11 +1,15 @@
 // filesystem.c
 #include "filesystem.h"
 #include "print.h"
+
 #include "port.h" // Assume this contains `outb` and `inb` functions
+
 #define ATA_PRIMARY_IO_BASE  0x1F0
 #define ATA_SECONDARY_IO_BASE 0x170
 #define ATA_CMD_IDENTIFY 0xEC
 #define SECTOR_SIZE 512
+#define ATA_CMD_WRITE_SECTORS 0x30
+
 void read_string_from_identify(uint16_t *identify_buffer, int start, int end, char *output)
 {
     int j = 0;
@@ -105,6 +109,46 @@ void init_filesystem()
     print_str("Initializing filesystem...");
     print_newline();
     // We could check if the drive is present or ready here.
+}
+
+int ata_write_sector(uint32_t lba, const uint8_t *buffer) {
+    // Select drive and head
+    outb(ATA_PRIMARY_IO_BASE + 6, 0xE0 | ((lba >> 24) & 0x0F)); // Master, LBA mode
+    outb(ATA_PRIMARY_IO_BASE + 2, 1);                           // Sector count: 1
+    outb(ATA_PRIMARY_IO_BASE + 3, (uint8_t)lba);                // LBA low byte
+    outb(ATA_PRIMARY_IO_BASE + 4, (uint8_t)(lba >> 8));         // LBA mid byte
+    outb(ATA_PRIMARY_IO_BASE + 5, (uint8_t)(lba >> 16));        // LBA high byte
+    outb(ATA_PRIMARY_IO_BASE + 7, ATA_CMD_WRITE_SECTORS);       // Send write command
+
+    // Wait for the drive to be ready (clear BSY)
+    while (inb(ATA_PRIMARY_IO_BASE + 7) & 0x80) {
+        // Busy waiting until BSY flag is cleared
+    }
+
+    // Check for any errors before writing
+    if (inb(ATA_PRIMARY_IO_BASE + 7) & 0x01) {  // ERR bit
+        print_str("Error: Disk reported an error before writing.");
+        return -1;
+    }
+
+    // Write the sector data (512 bytes or SECTOR_SIZE / 2 words)
+    for (int i = 0; i < SECTOR_SIZE / 2; ++i) {
+        uint16_t word = buffer[i * 2] | (buffer[i * 2 + 1] << 8); // Combine two bytes into a 16-bit word
+        outw(ATA_PRIMARY_IO_BASE, word);  // Write 16 bits (2 bytes) at a time
+    }
+
+    // Wait for the drive to finish the write (check DRQ and BSY flags)
+    while (inb(ATA_PRIMARY_IO_BASE + 7) & 0x80) {
+        // Wait until BSY is cleared
+    }
+
+    // Check for errors after the write
+    if (inb(ATA_PRIMARY_IO_BASE + 7) & 0x01) {  // ERR bit
+        print_str("Error: Disk reported an error after writing.");
+        return -1;
+    }
+
+    return 0;  // Success
 }
 
 int ata_read_sector(uint32_t lba, uint8_t *buffer)

@@ -1,4 +1,5 @@
 #include "string.h"
+#include <stdint.h>
 
 int strcmp(const char* str1, const char* str2) {
     while (*str1 && (*str1 == *str2)) {
@@ -76,4 +77,44 @@ void print_dec(unsigned int number) {
     while (i > 0) {
         print_char(buffer[--i]);
     }
+}
+
+uint32_t strtoul(const char *str, char **endptr, int base) {
+    uint32_t result = 0;
+    int digit;
+
+    while (*str) {
+        if (*str >= '0' && *str <= '9') {
+            digit = *str - '0';
+        } else if (*str >= 'A' && *str <= 'Z') {
+            digit = *str - 'A' + 10;
+        } else if (*str >= 'a' && *str <= 'z') {
+            digit = *str - 'a' + 10;
+        } else {
+            break;  // Invalid character for the base
+        }
+
+        if (digit >= base) {
+            break;  // Invalid digit for the base
+        }
+
+        result = result * base + digit;
+        str++;
+    }
+
+    if (endptr) {
+        *endptr = (char *)str;
+    }
+
+    return result;
+}
+
+char *strchr(const char *str, int c) {
+    while (*str) {
+        if (*str == (char)c) {
+            return (char *)str;
+        }
+        str++;
+    }
+    return 0;
 }
