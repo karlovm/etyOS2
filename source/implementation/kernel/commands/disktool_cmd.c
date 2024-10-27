@@ -36,12 +36,20 @@ void start_disktool(int color)
             print_newline();
             print_str(" - partinfo: Show partition information and filesystem types");
             print_newline();
+            print_str(" - formatpart <numbber>: Format partition to FAT32");
+            print_newline();
+            print_str(" - format: Format selected disk to fat32");
+            print_newline();
             print_str(" - exit: Exit from disktool");
             print_newline();
         }
         else if (strcmp(command, "listdisks") == 0)
         {
             list_disks();
+        }
+          else if (strcmp(command, "format") == 0)
+        {
+            format_disk_fat32();
         }
         else if (strncmp(command, "selectdisk ", 11) == 0)
         {
@@ -65,6 +73,11 @@ void start_disktool(int color)
         {
             int part_num = strtoul(command + 8, NULL, 10);
             delete_partition(part_num);
+        }
+         else if (strncmp(command, "formatpart ", 11) == 0)
+        {
+            int part_num = strtoul(command + 11, NULL, 10);
+            format_partition(part_num);
         }
         else if (strcmp(command, "partinfo") == 0)
         {

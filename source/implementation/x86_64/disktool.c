@@ -284,6 +284,140 @@ int create_partition_mb(uint32_t size_mb) {
     return 0;
 }
 
+// Format the entire selected disk as a single FAT32 partition
+int format_disk_fat32() {
+    if (current_disk == -1) {
+        print_str("No disk selected");
+        print_newline();
+        return -1;
+    }
+
+    uint32_t total_size_mb = available_disks[current_disk].size_mb;
+    
+    // Minimum size for FAT32 is typically 32MB
+    if (total_size_mb < 32) {
+        print_str("Disk too small for FAT32");
+        print_newline();
+        return -1;
+    }
+
+    // Clear MBR and create a single partition
+    uint8_t mbr[SECTOR_SIZE] = {0};
+    PartitionEntry* partition_table = (PartitionEntry*)(mbr + PARTITION_TABLE_OFFSET);
+
+    // Set up the partition entry for the entire disk
+    uint32_t start_lba = 2048;  // Standard starting sector for alignment
+    uint32_t sector_count = MB_TO_SECTORS(total_size_mb) - start_lba;
+
+    // Configure the partition entry
+    partition_table[0].status = 0x80;        // Bootable
+    partition_table[0].start_head = 0xFE;    // Using LBA addressing
+    partition_table[0].start_sector = 0xFFFF; // Maximum value for LBA
+    partition_table[0].type = 0x0C;          // FAT32 LBA
+    partition_table[0].end_head = 0xFE;      // Using LBA addressing
+    partition_table[0].end_sector = 0xFFFF;  // Maximum value for LBA
+    partition_table[0].lba_first = start_lba;
+    partition_table[0].sector_count = sector_count;
+
+    // Write MBR signature
+    mbr[510] = 0x55;
+    mbr[511] = 0xAA;
+
+    // Write the MBR
+    if (ata_write_sector_disk(available_disks[current_disk].controller, 
+                           available_disks[current_disk].drive, 
+                           0, mbr) != 0) {
+        print_str("Error writing MBR");
+        print_newline();
+        return -1;
+    }
+
+    // Format the partition as FAT32
+    if (dt_format_fat32(available_disks[current_disk].controller,
+                     available_disks[current_disk].drive,
+                     start_lba,
+                     sector_count) != 0) {
+        print_str("Error formatting partition");
+        print_newline();
+        return -1;
+    }
+
+    print_str("Disk formatted successfully");
+    print_newline();
+    return 0;
+}
+
+int format_partition(int partition_index) {
+    if (current_disk == -1) {
+        print_str("No disk selected");
+        print_newline();
+        return -1;
+    }
+
+    if (partition_index < 0 || partition_index >= 4) {
+        print_str("Invalid partition index");
+        print_newline();
+        return -1;
+    }
+
+    // Read the MBR to get partition information
+    uint8_t mbr[SECTOR_SIZE];
+    if (ata_read_sector_disk(available_disks[current_disk].controller, 
+                          available_disks[current_disk].drive, 
+                          0, mbr) != 0) {
+        print_str("Error reading MBR");
+        print_newline();
+        return -1;
+    }
+
+    PartitionEntry* partition_table = (PartitionEntry*)(mbr + PARTITION_TABLE_OFFSET);
+    
+    // Check if partition exists
+    if (partition_table[partition_index].type == 0x00) {
+        print_str("Partition does not exist");
+        print_newline();
+        return -1;
+    }
+
+    // Get partition size in MB
+    uint32_t size_mb = (partition_table[partition_index].sector_count * SECTOR_SIZE) / (1024 * 1024);
+    
+    // Check minimum size for FAT32
+    if (size_mb < 32) {
+        print_str("Partition too small for FAT32 (minimum 32MB)");
+        print_newline();
+        return -1;
+    }
+
+    // Update partition type to FAT32 LBA
+    partition_table[partition_index].type = 0x0C;
+
+    // Write updated MBR
+    if (ata_write_sector_disk(available_disks[current_disk].controller, 
+                           available_disks[current_disk].drive, 
+                           0, mbr) != 0) {
+        print_str("Error writing MBR");
+        print_newline();
+        return -1;
+    }
+
+    // Format the partition as FAT32
+    if (dt_format_fat32(available_disks[current_disk].controller,
+                     available_disks[current_disk].drive,
+                     partition_table[partition_index].lba_first,
+                     partition_table[partition_index].sector_count) != 0) {
+        print_str("Error formatting partition");
+        print_newline();
+        return -1;
+    }
+
+    print_str("Partition ");
+    print_int(partition_index);
+    print_str(" formatted successfully");
+    print_newline();
+    return 0;
+}
+
 // Display filesystem type for each partition on the selected disk
 void display_partition_info() {
     if (current_disk == -1) {
