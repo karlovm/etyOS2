@@ -54,6 +54,8 @@ void print_hex(unsigned int number) {
     }
 }
 
+
+
 void print_dec(unsigned int number) {
     char buffer[11];  // Maximum 10 digits for 32-bit number plus null terminator
     int i = 0;

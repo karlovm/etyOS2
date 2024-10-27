@@ -62,6 +62,10 @@ void kernel_main()
         {
             print_clear();
         }
+        else if (strcmp(command, "dsks") == 0)
+        {
+            display_available_disks();
+        }
         else if (strcmp(command, "about") == 0)
         {
             print_str("etyOS 2.0");

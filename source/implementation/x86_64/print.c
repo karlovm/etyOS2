@@ -127,6 +127,29 @@ void print_clear() {
     }
 }
 
+void print_int(uint32_t num)
+{
+    char buffer[11]; // Enough for 32-bit integer
+    int i = 10;
+    buffer[i] = '\0';
+
+    // Handle zero case
+    if (num == 0) {
+        print_str("0");
+        return;
+    }
+
+    // Convert number to string (in reverse order)
+    while (num > 0 && i > 0) {
+        buffer[--i] = '0' + (num % 10);
+        num /= 10;
+    }
+
+    // Print the resulting string
+    print_str(&buffer[i]);
+}
+
+
 void print_newline() {
     col = 0;  // Reset column to the beginning
 
