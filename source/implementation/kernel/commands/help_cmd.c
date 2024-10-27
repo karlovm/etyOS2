@@ -10,10 +10,13 @@ void show_help(int color)
     print_newline();
     print_str(" - clear: Clear the screen");
     print_newline();
+    print_str(" - disktool: Manage and view storage");
+    print_newline();
     print_str(" - echo <text>: Print text back to the console");
     print_newline();
     print_str(" - about: Get information about this build");
     print_newline();
+ 
 
 
 
