@@ -3,6 +3,11 @@
 #include "print.h"
 #include "port.h"
 
+
+#define MBR_SIZE 512
+#define PARTITION_TABLE_OFFSET 446
+#define FAT32_PARTITION_TYPE 0x0C  // FAT32 with LBA support
+
 void create_partition(uint32_t start_lba, uint32_t sector_count)
 {
     uint8_t mbr[MBR_SIZE];
@@ -15,15 +20,16 @@ void create_partition(uint32_t start_lba, uint32_t sector_count)
         return;
     }
 
-    // Create a new partition entry at the first available slot (up to 4 slots in the MBR)
+    // Locate the first available slot in the MBR partition table (up to 4 slots)
     PartitionEntry *partition_table = (PartitionEntry *)(mbr + PARTITION_TABLE_OFFSET);
 
     for (int i = 0; i < 4; ++i)
     {
         if (partition_table[i].type == 0x00)
-        {                                                   // Check if the partition entry is empty
-            partition_table[i].status = 0x00;               // Inactive (can be changed later to bootable)
-            partition_table[i].type = FAT32_PARTITION_TYPE; // Set partition type to FAT32
+        {
+            // Set up the new FAT32 partition
+            partition_table[i].status = 0x00;               // Mark as inactive; can be set to bootable later
+            partition_table[i].type = FAT32_PARTITION_TYPE; // FAT32 type
             partition_table[i].lba_first = start_lba;
             partition_table[i].sector_count = sector_count;
             break;
@@ -41,6 +47,8 @@ void create_partition(uint32_t start_lba, uint32_t sector_count)
     print_str("FAT32 Partition created successfully.");
     print_newline();
 }
+
+
 
 void display_partitions()
 {

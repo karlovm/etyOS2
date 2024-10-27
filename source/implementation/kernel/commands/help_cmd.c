@@ -16,8 +16,6 @@ void show_help(int color)
     print_newline();
     print_str(" - about: Get information about this build");
     print_newline();
- 
-
 
 
     print_set_color(PRINT_COLOR_YELLOW, color);

@@ -15,4 +15,7 @@ void check_filesystem();
 int ata_read_sector(uint32_t lba, uint8_t* buffer);
 int ata_write_sector(uint32_t lba, const uint8_t *buffer);
 
+int ata_read_sector_disk(int controller, int drive, uint32_t lba, uint8_t *buffer) ;
+int ata_write_sector_disk(int controller, int drive, uint32_t lba, const uint8_t *buffer);
+
 #endif // FILESYSTEM_H

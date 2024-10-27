@@ -151,6 +151,77 @@ int ata_write_sector(uint32_t lba, const uint8_t *buffer) {
     return 0;  // Success
 }
 
+// Updated function to write a sector for a specified controller and drive
+int ata_write_sector_disk(int controller, int drive, uint32_t lba, const uint8_t *buffer) {
+    uint16_t io_base = (controller == 0) ? ATA_PRIMARY_IO_BASE : ATA_SECONDARY_IO_BASE;
+    
+    // Select drive and head, LBA mode
+    outb(io_base + 6, 0xE0 | ((drive << 4) & 0x10) | ((lba >> 24) & 0x0F));
+    outb(io_base + 2, 1);                           // Sector count: 1
+    outb(io_base + 3, (uint8_t)lba);                // LBA low byte
+    outb(io_base + 4, (uint8_t)(lba >> 8));         // LBA mid byte
+    outb(io_base + 5, (uint8_t)(lba >> 16));        // LBA high byte
+    outb(io_base + 7, ATA_CMD_WRITE_SECTORS);       // Send write command
+
+    // Wait for the drive to be ready (clear BSY)
+    while (inb(io_base + 7) & 0x80);
+
+    // Check for any errors before writing
+    if (inb(io_base + 7) & 0x01) {  // ERR bit
+        print_str("Error: Disk reported an error before writing.");
+        return -1;
+    }
+
+    // Write the sector data (512 bytes or SECTOR_SIZE / 2 words)
+    for (int i = 0; i < SECTOR_SIZE / 2; ++i) {
+        uint16_t word = buffer[i * 2] | (buffer[i * 2 + 1] << 8); // Combine two bytes into a 16-bit word
+        outw(io_base, word);  // Write 16 bits (2 bytes) at a time
+    }
+
+    // Wait for the drive to finish the write (check DRQ and BSY flags)
+    while (inb(io_base + 7) & 0x80);
+
+    // Check for errors after the write
+    if (inb(io_base + 7) & 0x01) {  // ERR bit
+        print_str("Error: Disk reported an error after writing.");
+        return -1;
+    }
+
+    return 0;  // Success
+}
+
+// Updated function to read a sector for a specified controller and drive
+int ata_read_sector_disk(int controller, int drive, uint32_t lba, uint8_t *buffer) {
+    uint16_t io_base = (controller == 0) ? ATA_PRIMARY_IO_BASE : ATA_SECONDARY_IO_BASE;
+
+    // Select drive and head, LBA mode
+    outb(io_base + 6, 0xE0 | ((drive << 4) & 0x10) | ((lba >> 24) & 0x0F));
+    outb(io_base + 2, 1);                           // Sector count: 1
+    outb(io_base + 3, (uint8_t)lba);                // LBA low byte
+    outb(io_base + 4, (uint8_t)(lba >> 8));         // LBA mid byte
+    outb(io_base + 5, (uint8_t)(lba >> 16));        // LBA high byte
+    outb(io_base + 7, ATA_CMD_READ_SECTORS);        // Send read command
+
+    // Wait for the drive to be ready (clear BSY)
+    while (inb(io_base + 7) & 0x80);
+
+    // Check for errors before reading
+    if (inb(io_base + 7) & 0x01) {  // ERR bit
+        print_str("Error reading from disk.");
+        return -1;
+    }
+
+    // Read sector data (512 bytes or SECTOR_SIZE / 2 words)
+    for (int i = 0; i < SECTOR_SIZE / 2; ++i) {
+        uint16_t data = inw(io_base); // Read 16 bits at a time
+        buffer[i * 2] = (uint8_t)data;
+        buffer[i * 2 + 1] = (uint8_t)(data >> 8);
+    }
+
+    return 0;
+}
+
+
 int ata_read_sector(uint32_t lba, uint8_t *buffer)
 {
     // Select drive and head
