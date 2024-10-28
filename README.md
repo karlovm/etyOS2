@@ -15,7 +15,7 @@
 
 - **Kernel**: Developed in C, the kernel includes essential modules such as memory allocation, file system handling, and partition management.
 - **Bootloader**: Written in assembly (`x86_64/boot`), this ensures a fast and secure system start-up. The boot sequence involves low-level initializations handled in `header.asm`, `main.asm`, and `main64.asm`.
-- **Filesystem Support**: Custom-built disk tools (`disktool.c`), filesystem handlers (`filesystem.c`), and partition management are included.
+- **Filesystem Support**: Custom-built disk tools (`disktool.c`), filesystem handlers (`filesystem.c`), and partition management are included. etyOS is currently ext4 based.
 - **Memory Management**: Efficient memory allocation is managed through the `memory_allocator.c` module, ensuring optimized use of system resources.
 - **Command-line Utilities**: Basic system commands and I/O operations are supported via the `commands/` folder, giving users terminal-based control over the OS.
 
