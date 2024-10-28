@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "memory_allocator.h"
 
+
 #define MBR_SIZE 512
 #define PARTITION_TABLE_OFFSET 446
 #define FAT32_PARTITION_TYPE 0x0C // FAT32 with LBA support
@@ -24,33 +25,6 @@
 #define EXT4_FEATURE_COMPAT_DIR_INDEX 0x0020
 #define EXT4_FEATURE_INCOMPAT_EXTENTS 0x0040
 #define EXT4_FEATURE_INCOMPAT_64BIT 0x0080
-// Group descriptor structure
-typedef struct
-{
-    uint32_t bg_block_bitmap_lo;
-    uint32_t bg_inode_bitmap_lo;
-    uint32_t bg_inode_table_lo;
-    uint16_t bg_free_blocks_count_lo;
-    uint16_t bg_free_inodes_count_lo;
-    uint16_t bg_used_dirs_count_lo;
-    uint16_t bg_flags;
-    uint32_t bg_exclude_bitmap_lo;
-    uint16_t bg_block_bitmap_csum_lo;
-    uint16_t bg_inode_bitmap_csum_lo;
-    uint16_t bg_itable_unused_lo;
-    uint16_t bg_checksum;
-    uint32_t bg_block_bitmap_hi;
-    uint32_t bg_inode_bitmap_hi;
-    uint32_t bg_inode_table_hi;
-    uint16_t bg_free_blocks_count_hi;
-    uint16_t bg_free_inodes_count_hi;
-    uint16_t bg_used_dirs_count_hi;
-    uint16_t bg_itable_unused_hi;
-    uint32_t bg_exclude_bitmap_hi;
-    uint16_t bg_block_bitmap_csum_hi;
-    uint16_t bg_inode_bitmap_csum_hi;
-    uint32_t bg_reserved;
-} __attribute__((packed)) Ext4GroupDesc;
 
 
 
@@ -100,7 +74,6 @@ static void init_superblock(Ext4Superblock *sb, uint32_t total_sectors)
     memory_zero(sb->s_volume_name, sizeof(sb->s_volume_name));
     memory_copy(sb->s_volume_name, (const uint8_t *)volume_name, strlen(volume_name));
 }
-#include "memory_allocator.h"  // For allocate and free
 
 int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_sectors) {
     print_str("Formatting partition to ext4...");

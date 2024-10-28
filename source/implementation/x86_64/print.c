@@ -41,6 +41,56 @@ static inline uint8_t inb(uint16_t port) {
     return result;
 }
 
+void print_hex_digit(unsigned char digit) {
+    if (digit < 10) {
+        print_char('0' + digit);
+    } else {
+        print_char('A' + (digit - 10));
+    }
+}
+
+void print_hex(unsigned int number) {
+    // Handle special case of 0
+    if (number == 0) {
+        print_str("0x0");
+        return;
+    }
+
+    print_str("0x");
+    
+    // Find first non-zero digit
+    int started = 0;
+    for (int i = 7; i >= 0; i--) {
+        unsigned char digit = (number >> (i * 4)) & 0xF;
+        if (digit != 0 || started) {
+            print_hex_digit(digit);
+            started = 1;
+        }
+    }
+}
+
+void print_dec(unsigned int number) {
+    char buffer[11];  // Maximum 10 digits for 32-bit number plus null terminator
+    int i = 0;
+    
+    // Handle special case of 0
+    if (number == 0) {
+        print_char('0');
+        return;
+    }
+    
+    // Convert number to string (in reverse)
+    while (number > 0) {
+        buffer[i++] = '0' + (number % 10);
+        number /= 10;
+    }
+    
+    // Print in correct order
+    while (i > 0) {
+        print_char(buffer[--i]);
+    }
+}
+
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
 #define KEYBOARD_BUFFER_FULL 0x01
