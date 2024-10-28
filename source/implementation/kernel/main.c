@@ -4,6 +4,7 @@
 #include "partition.h"
 #include "filesystem.h"
 #include "disktool.h"
+#include "memory_allocator.h"
 
 void kernel_main()
 {
@@ -31,8 +32,10 @@ void kernel_main()
     print_str("Type 'help' for a list of commands.");
     print_newline();
 
+    
     // Command processing loop
     char command[256];
+    memory_allocator_init();
 
     init_disktool();
     int color = PRINT_COLOR_BLACK;

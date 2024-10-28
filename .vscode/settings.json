@@ -5,7 +5,10 @@
         "console.h": "c",
         "format": "c",
         "filesystem.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "port.h": "c",
+        "memory.h": "c",
+        "partition.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -1,5 +1,6 @@
 #include "string.h"
 #include <stdint.h>
+#include <stddef.h>
 
 int strcmp(const char* str1, const char* str2) {
     while (*str1 && (*str1 == *str2)) {
@@ -115,6 +116,16 @@ char *strchr(const char *str, int c) {
             return (char *)str;
         }
         str++;
+    }
+    return 0;
+}
+
+
+int strncmp(const char* str1, const char* str2, size_t num) {
+    for (size_t i = 0; i < num; i++) {
+        if (str1[i] != str2[i] || str1[i] == '\0') {
+            return (unsigned char)str1[i] - (unsigned char)str2[i];
+        }
     }
     return 0;
 }
