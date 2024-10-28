@@ -7,9 +7,9 @@
 void memory_allocator_init();
 
 // Allocates a block of memory of the given size
-void* kmalloc(size_t size);
+void* allocate(size_t size);
 
 // Frees a previously allocated block of memory
-void kfree(void* ptr);
+void free(void* ptr);
 
 #endif // MEMORY_ALLOCATOR_H

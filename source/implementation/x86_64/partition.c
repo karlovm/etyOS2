@@ -100,7 +100,7 @@ static void init_superblock(Ext4Superblock *sb, uint32_t total_sectors)
     memory_zero(sb->s_volume_name, sizeof(sb->s_volume_name));
     memory_copy(sb->s_volume_name, (const uint8_t *)volume_name, strlen(volume_name));
 }
-#include "memory_allocator.h"  // For kmalloc and kfree
+#include "memory_allocator.h"  // For allocate and free
 
 int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_sectors) {
     print_str("Formatting partition to ext4...");
@@ -114,7 +114,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
     }
 
     // Dynamically allocate memory for the disk buffer
-    uint8_t* disk_buffer = (uint8_t*)kmalloc(SECTOR_SIZE);
+    uint8_t* disk_buffer = (uint8_t*)allocate(SECTOR_SIZE);
     if (disk_buffer == NULL) {
         print_str("Error: cannot allocate memory for disk buffer");
         print_newline();
@@ -131,7 +131,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
     if (ata_read_sector_disk(controller, drive, sb_sector, disk_buffer) != 0) {
         print_str("Error: cannot read superblock");
         print_newline();
-        kfree(disk_buffer);  // Free allocated memory before returning
+        free(disk_buffer);  // Free allocated memory before returning
         return -1;
     }
 
@@ -144,7 +144,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
     if (blocks_per_group == 0) {
         print_str("Error: invalid blocks per group");
         print_newline();
-        kfree(disk_buffer);  // Free allocated memory before returning
+        free(disk_buffer);  // Free allocated memory before returning
         return -1;
     }
 
@@ -156,7 +156,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
         print_str("Error: invalid number of block groups: ");
         print_int(num_block_groups);
         print_newline();
-        kfree(disk_buffer);  // Free allocated memory before returning
+        free(disk_buffer);  // Free allocated memory before returning
         return -1;
     }
 
@@ -176,7 +176,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
     if (ata_write_sector_disk(controller, drive, sb_sector, disk_buffer) != 0) {
         print_str("Error: cannot write superblock");
         print_newline();
-        kfree(disk_buffer);  // Free allocated memory before returning
+        free(disk_buffer);  // Free allocated memory before returning
         return -1;
     }
 
@@ -224,7 +224,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
             print_str("Error: cannot write block group descriptor at sector ");
             print_int(gdt_sector);
             print_newline();
-            kfree(disk_buffer);  // Free allocated memory before returning
+            free(disk_buffer);  // Free allocated memory before returning
             return -1;
         }
 
@@ -237,7 +237,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
             print_str("Error: cannot write block bitmap at sector ");
             print_int(bitmap_sector);
             print_newline();
-            kfree(disk_buffer);  // Free allocated memory before returning
+            free(disk_buffer);  // Free allocated memory before returning
             return -1;
         }
 
@@ -247,7 +247,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
             print_str("Error: cannot write inode bitmap at sector ");
             print_int(bitmap_sector + 1);
             print_newline();
-            kfree(disk_buffer);  // Free allocated memory before returning
+            free(disk_buffer);  // Free allocated memory before returning
             return -1;
         }
     }
@@ -256,7 +256,7 @@ int format_ext4(int controller, int drive, uint32_t start_lba, uint32_t total_se
     print_newline();
     
     // Free the allocated disk buffer
-    kfree(disk_buffer);
+    free(disk_buffer);
     
     return 0;
 }
